@@ -22,9 +22,14 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+
+import io.questdb.cairo.sql.Record;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class CallTablesMemory extends SynchronizedJob implements Closeable {
-    private static final Log LOG = LogFactory.getLog(CallTablesMemory.class);
+    private static final Log LOG =   LogFactory.getLog(CallTablesMemory.class);
     public static Map<TableToken, List<Object>> updatedTuples = new HashMap<>();;
 
     public CallTablesMemory(CairoEngine engine) throws SqlException{
@@ -108,4 +113,41 @@ public class CallTablesMemory extends SynchronizedJob implements Closeable {
         
         return false;
     }
+    public static void sendQuery(CharSequence sqlQuery)
+    {   
+        String regex = "ts\\s*=\\s*'([^']+)'";
+        Pattern pattern = Pattern.compile(regex);
+        Matcher matcher = pattern.matcher(sqlQuery);
+    
+        if (matcher.find()) {
+            String timestamp = matcher.group(1); // Extract the value within the single quotes
+            LOG.info().$("Timestamp").$(timestamp).$();
+        }
+                            
+    }
+
+    public static void sendUpdates(Record masterRecord, int toType, int i){
+             switch (ColumnType.tagOf(toType)) {
+                case ColumnType.INT:
+                LOG.info().$("DATA Value ").$(masterRecord.getInt(i)).$();                    
+                break;
+                case ColumnType.FLOAT:
+                LOG.info().$("DATA Value ").$(masterRecord.getFloat(i)).$();                    
+                break;
+                case ColumnType.LONG:
+                LOG.info().$("DATA Value ").$(masterRecord.getLong(i)).$();                    
+                break;
+                case ColumnType.DOUBLE:
+                LOG.info().$("DATA Value ").$(masterRecord.getDouble(i)).$();                    
+                break;
+                case ColumnType.CHAR:
+                LOG.info().$("DATA Value ").$(masterRecord.getChar(i)).$();                    
+                break;
+                case ColumnType.BOOLEAN:
+                LOG.info().$("DATA Value ").$(masterRecord.getBool(i)).$();                    
+                break;             
+        }
+          
+    }
+
 }

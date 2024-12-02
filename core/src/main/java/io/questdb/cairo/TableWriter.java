@@ -2286,6 +2286,9 @@ public class TableWriter implements TableWriterAPI, MetadataService, Closeable {
                         final long tsLagSize = walLagRowCount << 3;
                         final long mappedTimestampIndexAddr = walTimestampColumn.addressOf(rowLo << 4);
                         timestampAddr = o3TimestampMem.getAddress();
+                        LOG.info().$("SOMETHING").$(o3TimestampMem).$();
+                        LOG.info().$("SOMETHING_1").$(timestampAddr).$();
+
 
                         final long tsLagBufferAddr = mapAppendColumnBuffer(timestampColumn, tsLagOffset, tsLagSize, false);
                         try {
@@ -5367,6 +5370,7 @@ public class TableWriter implements TableWriterAPI, MetadataService, Closeable {
                 for (int i = 0, n = txWriter.getPartitionCount() - 1; i < n; i++) {
 
                     long timestamp = txWriter.getPartitionTimestampByIndex(i);
+                    LOG.info().$("Timestamp: ").$(timestamp).$();
                     path.trimTo(pathSize);
                     setStateForTimestamp(path, timestamp);
 
@@ -6199,6 +6203,7 @@ public class TableWriter implements TableWriterAPI, MetadataService, Closeable {
     }
 
     private void openLastPartitionAndSetAppendPosition(long ts) {
+        
         openPartition(ts);
         setAppendPosition(txWriter.getTransientRowCount() + txWriter.getLagRowCount(), false);
     }
@@ -6249,6 +6254,7 @@ public class TableWriter implements TableWriterAPI, MetadataService, Closeable {
 
     private void openPartition(long timestamp) {
         try {
+            
             timestamp = txWriter.getPartitionTimestampByTimestamp(timestamp);
             setStateForTimestamp(path, timestamp);
             partitionTimestampHi = txWriter.getNextPartitionTimestamp(timestamp) - 1;
@@ -6261,7 +6267,7 @@ public class TableWriter implements TableWriterAPI, MetadataService, Closeable {
 
             lastOpenPartitionTs = timestamp;
             lastOpenPartitionIsReadOnly = partitionBy != PartitionBy.NONE && txWriter.isPartitionReadOnlyByPartitionTimestamp(lastOpenPartitionTs);
-
+            
             for (int i = 0; i < columnCount; i++) {
                 if (metadata.getColumnType(i) > 0) {
                     final CharSequence name = metadata.getColumnName(i);
