@@ -34,6 +34,10 @@ import io.questdb.log.Log;
 import io.questdb.log.LogFactory;
 import io.questdb.mp.SynchronizedJob;
 import io.questdb.std.Misc;
+import io.questdb.cairo.sql.Record;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import io.questdb.std.ObjHashSet;
 import io.questdb.std.str.DirectString;
 
@@ -57,6 +61,7 @@ public class CallTablesMemory extends SynchronizedJob implements Closeable {
     private static final int STEPS = 1; // Snapshots are taken every STEPS seconds. Set to 1 for demonstration, Set to a higher number while testing / deploying
 
     public static boolean closeTime; // Cleans disk if QuestDB is shutting down.
+
 
     public CallTablesMemory(CairoEngine engine) throws SqlException{
         try{
@@ -194,6 +199,45 @@ public class CallTablesMemory extends SynchronizedJob implements Closeable {
         } 
         return false;
     }
+
+    public static void sendQuery(CharSequence sqlQuery)
+    {   
+        String regex = "ts\\s*=\\s*'([^']+)'";
+        Pattern pattern = Pattern.compile(regex);
+        Matcher matcher = pattern.matcher(sqlQuery);
+    
+        if (matcher.find()) {
+            String timestamp = matcher.group(1); // Extract the value within the single quotes
+            LOG.info().$("Timestamp").$(timestamp).$();
+        }
+                            
+    }
+
+    public static void sendUpdates(Record masterRecord, int toType, int i){
+             switch (ColumnType.tagOf(toType)) {
+                case ColumnType.INT:
+                LOG.info().$("DATA Value ").$(masterRecord.getInt(i)).$();                    
+                break;
+                case ColumnType.FLOAT:
+                LOG.info().$("DATA Value ").$(masterRecord.getFloat(i)).$();                    
+                break;
+                case ColumnType.LONG:
+                LOG.info().$("DATA Value ").$(masterRecord.getLong(i)).$();                    
+                break;
+                case ColumnType.DOUBLE:
+                LOG.info().$("DATA Value ").$(masterRecord.getDouble(i)).$();                    
+                break;
+                case ColumnType.CHAR:
+                LOG.info().$("DATA Value ").$(masterRecord.getChar(i)).$();                    
+                break;
+                case ColumnType.BOOLEAN:
+                LOG.info().$("DATA Value ").$(masterRecord.getBool(i)).$();                    
+                break;             
+        }
+          
+    }
+
+
 
     private void scheduledSnapshotCreator() {
         /*
@@ -348,6 +392,5 @@ public class CallTablesMemory extends SynchronizedJob implements Closeable {
     //    }
        
     }
-
 
 }

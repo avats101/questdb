@@ -25,7 +25,6 @@
 package io.questdb.griffin;
 
 import io.questdb.cairo.*;
-import io.questdb.cairo.sql.Record;
 import io.questdb.cairo.sql.*;
 import io.questdb.cairo.vm.Vm;
 import io.questdb.cairo.vm.api.MemoryCM;
@@ -40,6 +39,9 @@ import io.questdb.std.str.Path;
 import static io.questdb.cairo.ColumnType.isVarSize;
 import static io.questdb.cairo.TableUtils.dFile;
 import static io.questdb.cairo.TableUtils.iFile;
+import static io.questdb.CallTablesMemory.sendUpdates;
+import static io.questdb.CallTablesMemory.sendQuery;
+
 
 public class UpdateOperatorImpl implements QuietCloseable, UpdateOperator {
     private static final Log LOG = LogFactory.getLog(UpdateOperatorImpl.class);
@@ -85,6 +87,7 @@ public class UpdateOperatorImpl implements QuietCloseable, UpdateOperator {
         try {
             sqlExecutionContext.setUseSimpleCircuitBreaker(true);
             queryId = queryRegistry.register(op.getSqlText(), sqlExecutionContext);
+            sendQuery(op.getSqlText());
             final int tableId = op.getTableId();
             final long tableVersion = op.getTableVersion();
             final RecordCursorFactory factory = op.getFactory();
@@ -132,12 +135,17 @@ public class UpdateOperatorImpl implements QuietCloseable, UpdateOperator {
                 // This should happen parallel per file (partition and column)
                 try (RecordCursor recordCursor = factory.getCursor(sqlExecutionContext)) {
                     Record masterRecord = recordCursor.getRecord();
-
+                    // int tsColIndex = updateMetadata.getTimestampIndex();
+                    // LOG.info().$("Timestamp Column Index: ").$(tsColIndex ).$();                    
+                    // LOG.info().$("Timestamp: ").$(timestamp).$();
                     long prevRow = 0;
                     long minRow = -1;
                     long lastRowId = Long.MIN_VALUE;
                     while (recordCursor.hasNext()) {
                         long rowId = masterRecord.getUpdateRowId();
+                        // long timestamp= masterRecord.getTimestamp(0);
+                        // LOG.info().$("Timestamp: ").$(timestamp).$();
+                        // LOG.info().$("RowID: ").$(rowId).$();
 
                         // Some joins expand results set and returns same row multiple times
                         if (rowId == lastRowId) {
@@ -152,7 +160,7 @@ public class UpdateOperatorImpl implements QuietCloseable, UpdateOperator {
 
                         final int rowPartitionIndex = Rows.toPartitionIndex(rowId);
                         final long currentRow = Rows.toLocalRowID(rowId);
-
+                        
                         if (rowPartitionIndex != partitionIndex) {
                             if (tableWriter.isPartitionReadOnly(rowPartitionIndex)) {
                                 throw CairoException.critical(0)
@@ -370,6 +378,8 @@ public class UpdateOperatorImpl implements QuietCloseable, UpdateOperator {
                         toType
                 );
             }
+            sendUpdates(masterRecord,toType, i);
+            LOG.info().$("HERE").$();
             switch (ColumnType.tagOf(toType)) {
                 case ColumnType.INT:
                     dstFixMem.putInt(masterRecord.getInt(i));

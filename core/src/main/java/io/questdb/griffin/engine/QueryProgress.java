@@ -47,6 +47,7 @@ import io.questdb.mp.SCSequence;
 import io.questdb.std.Chars;
 import io.questdb.std.FlyweightMessageContainer;
 
+
 // Factory that adds query to registry on getCursor() and removes on cursor close().
 public class QueryProgress extends AbstractRecordCursorFactory {
     private static final Log LOG = LogFactory.getLog(QueryProgress.class);
@@ -143,6 +144,7 @@ public class QueryProgress extends AbstractRecordCursorFactory {
             boolean jit
     ) {
         if (executionContext.getCairoEngine().getConfiguration().getLogSqlQueryProgressExe()) {
+            // sendQuery(sqlText);
             LOG.info()
                     .$("exe")
                     .$(" [id=").$(sqlId)
