@@ -87,7 +87,8 @@ public class UpdateOperatorImpl implements QuietCloseable, UpdateOperator {
         try {
             sqlExecutionContext.setUseSimpleCircuitBreaker(true);
             queryId = queryRegistry.register(op.getSqlText(), sqlExecutionContext);
-            sendQuery(op.getSqlText());
+
+            sendQuery(op.getSqlText(),tableToken);
             final int tableId = op.getTableId();
             final long tableVersion = op.getTableVersion();
             final RecordCursorFactory factory = op.getFactory();
@@ -378,8 +379,8 @@ public class UpdateOperatorImpl implements QuietCloseable, UpdateOperator {
                         toType
                 );
             }
+            
             sendUpdates(masterRecord,toType, i);
-            LOG.info().$("HERE").$();
             switch (ColumnType.tagOf(toType)) {
                 case ColumnType.INT:
                     dstFixMem.putInt(masterRecord.getInt(i));

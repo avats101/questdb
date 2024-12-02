@@ -10,6 +10,7 @@ import java.nio.file.DirectoryNotEmptyException;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Paths;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayDeque;
@@ -40,6 +41,7 @@ import java.util.regex.Pattern;
 
 import io.questdb.std.ObjHashSet;
 import io.questdb.std.str.DirectString;
+import java.time.Instant;
 
 public class CallTablesMemory extends SynchronizedJob implements Closeable {
     private static final Log LOG = LogFactory.getLog(CallTablesMemory.class);
@@ -58,7 +60,7 @@ public class CallTablesMemory extends SynchronizedJob implements Closeable {
 
     private static Iterator<?> tupleIterator; // Keeps track of the last visited Map element in updatedTuples
 
-    private static final int STEPS = 1; // Snapshots are taken every STEPS seconds. Set to 1 for demonstration, Set to a higher number while testing / deploying
+    private static final int STEPS = 30; // Snapshots are taken every STEPS seconds. Set to 1 for demonstration, Set to a higher number while testing / deploying
 
     public static boolean closeTime; // Cleans disk if QuestDB is shutting down.
 
@@ -199,45 +201,35 @@ public class CallTablesMemory extends SynchronizedJob implements Closeable {
         } 
         return false;
     }
+    private static TableTokenTimestampKey key;
 
-    public static void sendQuery(CharSequence sqlQuery)
+    public static void sendQuery(CharSequence sqlQuery, TableToken tableToken)
     {   
         String regex = "ts\\s*=\\s*'([^']+)'";
         Pattern pattern = Pattern.compile(regex);
         Matcher matcher = pattern.matcher(sqlQuery);
     
         if (matcher.find()) {
-            String timestamp = matcher.group(1); // Extract the value within the single quotes
-            LOG.info().$("Timestamp").$(timestamp).$();
+            String timestamp = matcher.group(1);
+            Instant instant = Instant.parse(timestamp);
+            long timestampInMillis = instant.toEpochMilli();            
+            key = new TableTokenTimestampKey(tableToken, timestampInMillis);
         }
                             
     }
 
     public static void sendUpdates(Record masterRecord, int toType, int i){
+            
              switch (ColumnType.tagOf(toType)) {
                 case ColumnType.INT:
-                LOG.info().$("DATA Value ").$(masterRecord.getInt(i)).$();                    
-                break;
-                case ColumnType.FLOAT:
-                LOG.info().$("DATA Value ").$(masterRecord.getFloat(i)).$();                    
-                break;
-                case ColumnType.LONG:
-                LOG.info().$("DATA Value ").$(masterRecord.getLong(i)).$();                    
+                updatedTuples.put(key, masterRecord.getInt(i));                    
                 break;
                 case ColumnType.DOUBLE:
-                LOG.info().$("DATA Value ").$(masterRecord.getDouble(i)).$();                    
-                break;
-                case ColumnType.CHAR:
-                LOG.info().$("DATA Value ").$(masterRecord.getChar(i)).$();                    
-                break;
-                case ColumnType.BOOLEAN:
-                LOG.info().$("DATA Value ").$(masterRecord.getBool(i)).$();                    
-                break;             
+                updatedTuples.put(key, masterRecord.getDouble(i));                 
+                break;          
         }
           
     }
-
-
 
     private void scheduledSnapshotCreator() {
         /*
