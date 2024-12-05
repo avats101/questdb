@@ -22,7 +22,7 @@ java -jar core/target/questdb-<software_version>.jar -d <root_directory>
 ### Newly added
 - ``core/src/main/java/io/questdb/CallTablesMemory.java``: Implements Copy-On-Write and Incremental Snapshot strategies from scratch, including the algorithms themselves, the interface with CairoEngine (query processing engine of QuestDB) to retrieve the information of the updated tuples during the query execution, data structure to hold the updated tuples in memory, snapshot creation from the DB initialization capability and serializing & saving functionalities for the snapshots.
 - ``core/src/main/java/io/questdb/TableTokenTimeKey.java``: Creates a new hash key that combines TableToken (QuestDB's table identifier) with timestamp index to be used for storing updated tuples.
-- ``scripts/*`: Contains scripts that can be used for testing our implementation
+- ``scripts/*``: Contains scripts that can be used for testing our implementation
 ### Revised
 - ``core/src/main/java/io/questdb/ServerMain.java``: Modified to ensure that our snapshot strategies are loaded during the DB initialization
 - ``core/src/main/java/io/questdb/BinarySerializer.java``: Modified to handle serializing our generated snapshots
