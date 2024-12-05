@@ -25,7 +25,7 @@ java -jar core/target/questdb-<software_version>.jar -d <root_directory>
 - ``scripts/*`: Contains scripts that can be used for testing our implementation
 ### Revised
 - ``core/src/main/java/io/questdb/ServerMain.java``: Modified to ensure that our snapshot strategies are loaded during the DB initialization
-- ``core/src/main/java/io/questdb/BinarySerializer.java`: Modified to handle serializing our generated snapshots
+- ``core/src/main/java/io/questdb/BinarySerializer.java``: Modified to handle serializing our generated snapshots
 - ``core/src/main/java/io/questdb/griffin/UpdateOperatorImpl.java``: Modified to extract tuples being updated during a query execution
 
 ## Testing:
